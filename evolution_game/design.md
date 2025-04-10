@@ -50,7 +50,7 @@ Attributes:
    \end{equation}
    $$
 
-5. 给出从众策略的公式，其中$q=2$
+5. 给出从众策略的公式，其中$q=0.01$
    $$
    \begin{equation}
    F_i=\left\{
