@@ -1,10 +1,14 @@
 import numpy as np
 import random
+from matplotlib import pyplot as plt
+import tqdm
+from dataclasses import dataclass
 
 
 class PggModel:
     def __init__(self, rho: float, l: float, r: float, size: int):
         """
+        for 'IsConverse' , value 1 denotes conserve choice and 0 denotes normal action
         :param rho: noise traders(反选者) 的比例
         :param l: 历史回报函数和从众函数的权重。l越大越倾向于从众
         :param r: 投资的回报率
@@ -65,7 +69,7 @@ class PggModel:
         if True:
             s = np.tanh(2 * (phi - 2))
         else:
-            phi.astype(np.float64)
+            phi = phi.astype(np.float64)
             phi -= phi.mean()
             a, b = phi.min(), phi.max()
             s = np.tanh(2 * phi / max(abs(b), abs(a)))
@@ -86,24 +90,49 @@ class PggModel:
                 flag = X[row][col] if X[row][col] == 1 else -1
                 p = self.PolicyTable[row][col]
                 s = s_tabel[row][col]
-                u[row][col] = p + flag * (1 - p) * s if s >= 0 else p * (1 - flag * s)
+                u[row][col] = p + flag * (1 - p) * s \
+                    if s >= 0 else p * (1 - flag * s)
         return u
-    
-    @staticmethod
-    def get_w(X) -> float:
-        pass
     
     def get_f(self, X) -> np.ndarray:
         """
         get policy update table F based on surrounding choices table X
         :param X: choices table of candidates
-        :return: policy update table of F,shape:(size,size)
+        :return: policy update table of F,shape: (size,size)
         """
         f = np.zeros_like(X).astype(np.float64)
-        converse_weight = PggModel.get_w(X)
+        
+        n_candidates = X.shape[0] * X.shape[1]
+        converse_flag = X.sum() * 2 - n_candidates
+        converse_flag = 0 if converse_flag == 0 else 1 if converse_flag > 0 else -1
         for row in range(X.shape[0]):
             for col in range(X.shape[1]):
-                f[row][col] = X[row][col]
+                x = X[row][col] if X[row][col] == 1 else -1
+                if self.IsConverse[row][col] == 1:
+                    f[row][col] = 0.5 * \
+                                  (1 + (1 - 2 * 0.01) * x * converse_flag)
+                else:
+                    candidate_flag, n_neighbors = 0, 0
+                    if row > 0:
+                        candidate_flag += X[row - 1][col]
+                        n_neighbors += 1
+                    if col > 0:
+                        candidate_flag += X[row][col - 1]
+                        n_neighbors += 1
+                    if row < X.shape[0] - 1:
+                        candidate_flag += X[row + 1][col]
+                        n_neighbors += 1
+                    if col < X.shape[1] - 1:
+                        candidate_flag += X[row][col + 1]
+                        n_neighbors += 1
+                    candidate_flag = candidate_flag * 2 - n_neighbors
+                    candidate_flag = 0 if candidate_flag == 0 else 1 if candidate_flag > 0 else -1
+                    f[row][col] = 0.5 * \
+                                  (1 + (1 - 2 * 0.01) * x * candidate_flag)
+        
+        for row in range(f.shape[0]):
+            for col in range(f.shape[1]):
+                f[row][col] = 1 - f[row][col] if X[row][col] == 1 else f[row][col]
         return f
     
     def forward(self):
@@ -111,14 +140,42 @@ class PggModel:
         X denotes choice made based on p
         note that X in this implement is 0 or 1, not 1 or -1 in paper
         """
-        X = (np.random.rand(*self.PolicyTable.shape) < self.PolicyTable).astype(int)
+        X = (np.random.rand(*self.PolicyTable.shape)
+             < self.PolicyTable).astype(int)
         u = self.get_u(X)
         f = self.get_f(X)
-        
-        print(X, f, sep='\n')
-        return X
+        self.PolicyTable = (1 - self.l) * u + self.l * f
+        # print(X, X.sum(), sep='\n')
+        fc = X.sum() / (X.shape[0] * X.shape[1])
+        # print(fc, sep='\n')
+        return fc
+    
+    def train(self, n_steps, n_logs, show_progress=False) -> np.ndarray:
+        """
+        train the gpp model for n_steps steps,will return the fc in a np array
+        :param n_steps: number of steps to train
+        :param n_logs: number of logs to save
+        :param show_progress: whether show the progress by tqdm (to be implemented)
+        :return: return fc list in a np array
+        """
+        log_steps = n_steps // n_logs
+        if not isinstance(n_steps, int):
+            n_steps = int(n_steps)
+        if not isinstance(log_steps, int):
+            log_steps = int(log_steps)
+        fc_list = list()
+        r = tqdm.tqdm(range(n_steps), ncols=80)
+        for step in r:
+            if step % log_steps == 0:
+                fc_list.append(self.forward())
+        return np.array(fc_list, dtype=np.float64)
 
 
 if __name__ == '__main__':
-    model = PggModel(rho=0.9, l=0.5, r=3.5, size=4)
-    model.forward()
+    model = PggModel(rho=0.93, l=0.5, r=4.2, size=100)
+    n_steps, n_logs = 1e4, 200
+    result = model.train(n_steps=n_steps, n_logs=n_logs)
+    x = np.array(list(range(len(result)))) * (n_steps // n_logs)
+    t = plt.scatter(x, result)
+    # print(t)
+    plt.show()
