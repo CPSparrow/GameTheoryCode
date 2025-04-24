@@ -1,12 +1,10 @@
-import numpy as np
 import random
-from matplotlib import pyplot as plt
-from tqdm import tqdm
-from dataclasses import dataclass
-from matplotlib.colors import ListedColormap
 from time import time
 from typing import Union
-import concurrent.futures
+
+import numpy as np
+from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 time_total, time_x, time_u, time_f = 0, 0, 0, 0
 time_phi, time_s, time_op = 0, 0, 0

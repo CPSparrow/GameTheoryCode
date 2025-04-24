@@ -20,8 +20,8 @@ Attributes:
    \begin{equation}
    \Phi_i=\left\{
    \begin{aligned}
-   &r*N_k-c && \quad X=1\\
-   &r*N_k && \quad X=-1\\
+   &r*\frac{N_k^C}{N_k}-c && \quad X=1\\
+   &r*\frac{N_k^C}{N_k} && \quad X=-1\\
    \end{aligned}
    \right
    .
