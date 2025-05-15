@@ -19,9 +19,9 @@ class PggModel:
         self.PolicyTable = np.full((size, size), 0.5)
         
         n_total = size * size
-        n_ones = int(n_total * (1 - rho))
+        n_converse = int(n_total * (1 - rho))
         converse = np.zeros(n_total, dtype=int)
-        converse[:n_ones] = 1
+        converse[:n_converse] = 1
         np.random.shuffle(converse)
         converse.resize(size, size)
         
@@ -50,8 +50,8 @@ class PggModel:
         right[:, -1] = 0
         sum_neighbors = up + down + left + right
         
-        n_cooperators = X + sum_neighbors
         n_individuals = 1 + exist_up + exist_down + exist_left + exist_right
+        n_cooperators = X + sum_neighbors
         return n_cooperators / n_individuals
     
     @staticmethod
@@ -69,7 +69,7 @@ class PggModel:
         right_n[:, -1] = 0
         
         sum_neighbors_n = n + up_n + down_n + left_n + right_n
-        return sum_neighbors_n * (r - 1 * X)
+        return sum_neighbors_n * r - 1 * X
     
     @staticmethod
     def get_s(phi: np.ndarray) -> np.ndarray:
@@ -182,20 +182,20 @@ def plot_results(results, params):
     plt.legend(loc="lower right", fontsize=10)
     plt.grid(alpha=0.3, linestyle="--")
     plt.tight_layout()
-    plt.savefig("cooperation_evolution.png", dpi=300, bbox_inches="tight")
+    # plt.savefig("cooperation_evolution.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     # 可配置参数（支持多参数对比）
     params = {
-        "rho_list": [0.95, 0.99, 0.999],  # 不同初始自私者比例
+        "rho_list": [0.90, 0.95, 0.99],  # 不同初始自私者比例
         "l"       : 0.5,  # 策略权重
-        "r"       : 4.2,  # 收益因子
+        "r"       : 4.5,  # 收益因子
         "size"    : 100,  # 网格大小
         "n_steps" : 10000,  # 总步数
-        "n_logs"  : 250,  # 记录点数
-        "n_runs"  : 5  # 独立运行次数（计算统计量）
+        "n_logs"  : 200,  # 记录点数
+        "n_runs"  : 1  # 独立运行次数（计算统计量）
     }
     
     # 固定随机种子确保可重复性
@@ -220,6 +220,7 @@ def main():
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
     t1 = time()
     main()
     total = time() - t1
