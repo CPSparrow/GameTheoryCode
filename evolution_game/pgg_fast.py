@@ -182,8 +182,7 @@ def plot_results(results, params):
     plt.legend(loc="lower right", fontsize=10)
     plt.grid(alpha=0.3, linestyle="--")
     plt.tight_layout()
-    # plt.savefig("cooperation_evolution.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    plt.savefig("cooperation_evolution.svg")
 
 
 def main():
@@ -195,7 +194,7 @@ def main():
         "size"    : 100,  # 网格大小
         "n_steps" : 10000,  # 总步数
         "n_logs"  : 200,  # 记录点数
-        "n_runs"  : 1  # 独立运行次数（计算统计量）
+        "n_runs"  : 3  # 独立运行次数（计算统计量）
     }
     
     # 固定随机种子确保可重复性
